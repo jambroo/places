@@ -1,0 +1,2 @@
+<?php
+return ['places' => '/var/www/jim/data/places.json'];
