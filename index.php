@@ -19,7 +19,7 @@
                 $app->data->placesJSON = file_get_contents($config['places']);
                 $app->data->places = json_decode($app->data->placesJSON, true);
 
-                if (!$app->data->places) {
+                if (!is_array($app->data->places)) {
                     $app->halt(403, $errorWording);
                 }
 
@@ -47,10 +47,11 @@
 
     // Create new entry
     $app->post('/api/place', function () use ($app, $config) {
-        $place = $app->request->params('place');
-        $date = $app->request->params('date');
-        
-        if ($date && place && preg_match("/^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])$/", $date) &&
+        $requestBody = json_decode($app->request->getBody());
+        $place = $requestBody->place;
+        $date = $requestBody->date;
+
+        if ($date && $place && preg_match("/^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])$/", $date) &&
             !array_key_exists($date, $app->data->places)) {
             // Add new entry
             // Can assume $app->places is valid here as before dispatch hook would have been run.
