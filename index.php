@@ -10,6 +10,9 @@
 
     // Hook to ensure places.json db is present and valid
     $app->hook('slim.before.dispatch', function () use ($app, $config) {
+        // This should be class constant
+        $errorWording = 'Error reading and decoding places.json database file.';
+
         if ($config && array_key_exists('places', $config) &&
             file_exists($config['places'])) {
             try {
@@ -17,17 +20,17 @@
                 $app->data->places = json_decode($app->data->placesJSON, true);
 
                 if (!$app->data->places) {
-                    throw new \Exception('Error reading and decoding places.json database file.');
+                    $app->halt(403, $errorWording);
                 }
 
                 return true;
             } catch (\Exception $e) { 
-                throw new \Exception('Error reading and decoding places.json database file.');
+                $app->halt(403, $errorWording);
             }
         }
-        throw new \Exception('Error reading and decoding places.json database file.');
-    });
 
+        $app->halt(403, $errorWording);        
+    });
 
     // Get all
     $app->get('/api/place', function () use ($app) {
@@ -38,7 +41,7 @@
         if ($date && array_key_exists($date, $app->data->places)) {
             echo $app->data->places[$date];
         } else {
-            throw new \Exception('Error getting date entry.');
+            $app->halt(403, 'Error getting date entry.');
         }
     });
 
@@ -58,12 +61,11 @@
 
             // Save file
             if (file_put_contents($config['places'], $app->data->placesJSON)) {
-                echo '1';
-                return;
+                $app->halt(200, 'Entry successfully saved.');
             }
         }
 
-        throw new \Exception('Error saving entry.');
+        $app->halt(403, 'Error saving entry.');
     });
 
     $app->get('/:method', function () use ($app) {
