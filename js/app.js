@@ -5,11 +5,6 @@ var placeApp = angular.module('placeApp', [
   'placeControllers'
 ]);
 
-/*
-angular.module('app', ['appServices'])
-    .config(['$routeProvider', function($routeProvider) {
-    	*/
-
 placeApp.config(['$routeProvider',
   function($routeProvider) {
     $routeProvider.
