@@ -69,6 +69,32 @@
         $app->halt(403, 'Error saving entry.');
     });
 
+
+    // Update entry
+    $app->put('/api/place', function () use ($app, $config) {
+        $requestBody = json_decode($app->request->getBody());
+        $place = $requestBody->place;
+        $date = $requestBody->date;
+        $originalDate = $requestBody->originalDate;
+
+        if ($date && $place && preg_match("/^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])$/", $date)) {
+            // Add new entry
+            // Can assume $app->places is valid here as before dispatch hook would have been run.
+            $places = $app->data->places;
+            unset($places[$originalDate]);
+            $places[$date]= $place;
+            $app->data->places = $places;
+            $app->data->placesJSON = json_encode($app->data->places);
+
+            // Save file
+            if (file_put_contents($config['places'], $app->data->placesJSON)) {
+                $app->halt(200, 'Entry successfully updated.');
+            }
+        }
+
+        $app->halt(403, 'Error updating entry.');
+    });
+
     $app->get('/:method', function () use ($app) {
         $app->render('index.html');
     })->conditions(array('method' => '.*?'));
