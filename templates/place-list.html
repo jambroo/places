@@ -20,11 +20,11 @@
 </form>
 
 <h2>Previous Places</h2>
-<div ng-hide="places.length">
+<div ng-hide="countPlaces()">
 	- No previous places recorded -
 </div>
 
-<table class="table" ng-show="places.length">
+<table class="table" ng-show="countPlaces() > 0">
   <thead>
     <tr><th>Date</th><th>Place</th><th>&nbsp;</th></tr>
   </thead>
@@ -34,7 +34,7 @@
       <td>{{ place }}</td>
       <td>
         <a ng-href="#/place/{{date}}">Edit</a> |
-        <a href ng-click="rmPlace(date)">Remove</a>
+        <a href ng-click="remove(date)">Remove</a>
       </td>
     </tr>
   </tbody>

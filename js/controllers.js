@@ -2,70 +2,81 @@
 
 /* Controllers */
 
-var placeControllers = angular.module('placeControllers', []);
+var app = angular.module('placeControllers', []);
 
-placeControllers.controller('PlaceCtrl', ['$scope', '$routeParams', '$http',
-  function($scope, $routeParams, $http) {
+// Allows url change with no redirect.
+// From: http://joelsaupe.com/programming/angularjs-change-path-without-reloading/
+app.run(['$route', '$rootScope', '$location', function ($route, $rootScope, $location) {
+    var original = $location.path;
+    $location.path = function (path, reload) {
+        if (reload === false) {
+            var lastRoute = $route.current;
+            var un = $rootScope.$on('$locationChangeSuccess', function () {
+                $route.current = lastRoute;
+                un();
+            });
+        }
+        return original.apply($location, [path]);
+    };
+}])
+
+// Main place controller - contains save and remove functions
+app.controller('PlaceCtrl', ['$scope', '$routeParams', '$http', 'Places',
+  function($scope, $routeParams, $http, Places) {
+    // Initialise places to empty dictionary
+    $scope.places = {};
+
+    // Move to service (factory) and in controller at top depend on 
     $scope.save = function(place) {
-      var yyyy = place.date.getFullYear().toString();
-      var mm = (place.date.getMonth()+1).toString();
-      var dd  = place.date.getDate().toString();
-      var date = yyyy + '-' + (mm[1]?mm:"0"+mm[0]) + '-' + (dd[1]?dd:"0"+dd[0]);
+      var placeSave = Places.save(place);
 
-      var place = place.place;
-
-      $http.post('/api/place', {
-        date: date,
-        place: place
-      }).success(function(data) {
-        $scope.newEntry = date;
-        $scope.places[date] = place;
+      placeSave.promise.success(function(data) {
+        $scope.newEntry = placeSave.date;
+        $scope.places[placeSave.date] = placeSave.place;
         $scope.date = null;
         $scope.place = null;
       });
     };
 
-//    console.log("ZZZZ", $routeParams.date);
-    $scope.rmPlace = function(date) {
-      $http.delete('/api/place', {data: date}).success(function(data) {
+    $scope.remove = function(date) {
+      var placeRemove = Places.remove(date);
+
+      placeRemove.promise.success(function(data) {
         $scope.success = true;
         delete $scope.places[date];
       });
     };
 
-    $http.get('/api/place').success(function(data) {
-	    $scope.places = data;
-	  });
+    $scope.countPlaces = function () {
+      return Object.keys($scope.places).length;
+    }
+
+    // Get all places
+    Places.getAll().success(function(data) {
+      $scope.places = data;
+    });
   }]);
 
-placeControllers.controller('PlaceEditCtrl', ['$scope', '$routeParams', '$http', '$location', 
-  function($scope, $routeParams, $http, $location) {
+// Edit place controller
+app.controller('PlaceEditCtrl', ['$scope', '$routeParams', '$http', '$location', 'Places',
+  function($scope, $routeParams, $http, $location, Places) {
     var date = $routeParams.date;
-    // Could put update function here
+
     $scope.update = function(place) {
-      var yyyy = place.date.getFullYear().toString();
-      var mm = (place.date.getMonth()+1).toString();
-      var dd  = place.date.getDate().toString();
-      var newDate = yyyy + '-' + (mm[1]?mm:"0"+mm[0]) + '-' + (dd[1]?dd:"0"+dd[0]);
+      var placeUpdate = Places.update(place, date);
+      var newDate = placeUpdate.date;
 
-      var place = place.place;
-
-      $http.put('/api/place', {
-        date: newDate,
-        place: place,
-        originalDate: date
-      }).success(function(data) {
+      placeUpdate.promise.success(function(data) {
+        $location.path("/place/"+newDate, false);
         $scope.success = true;
       });
     };
 
-    if (date.match(/^(\d{4})(\/|-)(\d{2})(\/|-)(\d{2})$/)) {
-      $http.get('/api/place/'+date).success(function(data) {
-        $scope.place = {
-          date: new Date(date),
-          place: data
-        };
-      });
-    }
+    Places.get(date).success(function(data) {
+      $scope.place = {
+        date: new Date(date),
+        place: data
+      };
+    });
   }
 ]);
