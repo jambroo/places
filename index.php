@@ -95,6 +95,25 @@
         $app->halt(403, 'Error updating entry.');
     });
 
+    // Delete entry
+    $app->delete('/api/place', function () use ($app, $config) {
+        $date = $app->request->getBody();
+
+        if ($date && preg_match("/^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])$/", $date)) {
+            $places = $app->data->places;
+            unset($places[$date]);
+            $app->data->places = $places;
+            $app->data->placesJSON = json_encode($app->data->places);
+
+            // Save file
+            if (file_put_contents($config['places'], $app->data->placesJSON)) {
+                $app->halt(200, 'Entry successfully removed.');
+            }
+        }
+
+        $app->halt(403, 'Error removing entry.');
+    });
+
     $app->get('/:method', function () use ($app) {
         $app->render('index.html');
     })->conditions(array('method' => '.*?'));

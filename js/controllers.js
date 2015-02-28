@@ -4,8 +4,8 @@
 
 var placeControllers = angular.module('placeControllers', []);
 
-placeControllers.controller('PlaceCtrl', ['$scope', '$http',
-  function($scope, $http) {
+placeControllers.controller('PlaceCtrl', ['$scope', '$routeParams', '$http',
+  function($scope, $routeParams, $http) {
     $scope.save = function(place) {
       var yyyy = place.date.getFullYear().toString();
       var mm = (place.date.getMonth()+1).toString();
@@ -25,10 +25,19 @@ placeControllers.controller('PlaceCtrl', ['$scope', '$http',
       });
     };
 
+//    console.log("ZZZZ", $routeParams.date);
+    $scope.rmPlace = function(date) {
+      $http.delete('/api/place', {data: date}).success(function(data) {
+        $scope.success = true;
+        delete $scope.places[date];
+      });
+    };
+
     $http.get('/api/place').success(function(data) {
 	    $scope.places = data;
 	  });
   }]);
+
 placeControllers.controller('PlaceEditCtrl', ['$scope', '$routeParams', '$http', '$location', 
   function($scope, $routeParams, $http, $location) {
     var date = $routeParams.date;
@@ -50,7 +59,6 @@ placeControllers.controller('PlaceEditCtrl', ['$scope', '$routeParams', '$http',
       });
     };
 
-    var date = $routeParams.date;
     if (date.match(/^(\d{4})(\/|-)(\d{2})(\/|-)(\d{2})$/)) {
       $http.get('/api/place/'+date).success(function(data) {
         $scope.place = {
